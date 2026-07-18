@@ -38,7 +38,7 @@
                     usernamestr = userNameStrElement.textContent || userNameStrElement.value || '';
                 }
 
-                // 如果通过id获取失败，尝试其他方式
+                // 如果通过id获取失败，尝试其他方式1
                 if (!username || !usernamestr) {
                     // 方法1: 通过常见的class名或属性查找
                     const possibleUserElements = window.parent.document.querySelectorAll('[id*="user"], [class*="user"], [name*="user"]');
