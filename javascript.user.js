@@ -9,6 +9,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_deleteValue
+// @grant        GM_openInTab
 // @connect      *
 // ==/UserScript==
 
@@ -529,51 +530,12 @@
             btn.disabled = true;
 
             try {
-                const response = await new Promise((resolve, reject) => {
-                    GM_xmlhttpRequest({
-                        method: "GET",
-                        url: DOMAIN_CONFIG.UPDATE_SCRIPT_URL,
-                        timeout: 10000,
-                        onload: (res) => resolve(res),
-                        onerror: () => reject(new Error('下载失败')),
-                        ontimeout: () => reject(new Error('下载超时'))
-                    });
-                });
+                GM_openInTab(DOMAIN_CONFIG.UPDATE_SCRIPT_URL, { active: true });
 
-                if (response.status === 200) {
-                    GM_setValue('auto_dispatch_new_script', response.responseText);
-                    GM_setValue('auto_dispatch_new_version', updateInfo.version);
-
-                    const confirmDialog = document.createElement('div');
-                    confirmDialog.style.cssText = `
-                        position: fixed;
-                        top: 50%;
-                        left: 50%;
-                        transform: translate(-50%, -50%);
-                        background: white;
-                        border-radius: 12px;
-                        padding: 24px;
-                        width: 320px;
-                        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-                        z-index: 1000000;
-                        text-align: center;
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    `;
-                    confirmDialog.innerHTML = `
-                        <div style="font-size: 32px; margin-bottom: 12px;">✅</div>
-                        <div style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 8px;">更新包下载完成</div>
-                        <div style="font-size: 14px; color: #666; margin-bottom: 16px;">请重新加载页面以应用更新</div>
-                        <button id="reload-btn" style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 14px; font-weight: 600; cursor: pointer;">立即刷新</button>
-                    `;
-                    document.body.appendChild(confirmDialog);
+                setTimeout(() => {
                     document.body.removeChild(dialog);
-
-                    document.getElementById('reload-btn').addEventListener('click', () => {
-                        window.location.reload();
-                    });
-                } else {
-                    throw new Error('下载失败');
-                }
+                    document.body.removeChild(overlay);
+                }, 1000);
             } catch (error) {
                 btn.textContent = '更新失败';
                 btn.style.background = '#dc3545';
@@ -586,18 +548,9 @@
     }
 
     function applyUpdateIfAvailable() {
-        const newScript = GM_getValue('auto_dispatch_new_script');
-        const newVersion = GM_getValue('auto_dispatch_new_version');
-        if (newScript && newVersion) {
-            const confirmed = confirm(`检测到已下载的新版本 ${newVersion}，是否应用更新？`);
-            if (confirmed) {
-                GM_setValue('auto_dispatch_applying_update', true);
-                window.location.reload();
-            } else {
-                GM_deleteValue('auto_dispatch_new_script');
-                GM_deleteValue('auto_dispatch_new_version');
-            }
-        }
+        GM_deleteValue('auto_dispatch_new_script');
+        GM_deleteValue('auto_dispatch_new_version');
+        GM_deleteValue('auto_dispatch_applying_update');
     }
 
     async function initDomainConfig() {
